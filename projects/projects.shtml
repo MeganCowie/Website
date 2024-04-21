@@ -1,0 +1,10 @@
+<!--#set var="categoryName" value="" -->
+<!--#set var="categoryLink" value="" -->
+<!--#set var="categoryspacer" value="" -->
+
+<!--#set var="pageTitle" value="Projects" -->
+<!--#set var="content" value="projects/content/content_empty.html"-->
+
+<!--#set var="lastUpdate" value="April 9, 2024" -->
+
+<!--#include virtual="../template_page.shtml" -->

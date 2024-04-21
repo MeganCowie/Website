@@ -1,0 +1,10 @@
+<!--#set var="categoryName" value="Philosophy" -->
+<!--#set var="categoryLink" value="/philosophy/philosophy.shtml" -->
+<!--#set var="categoryspacer" value=" /" -->
+
+<!--#set var="pageTitle" value="The binary spectrum" -->
+<!--#set var="content" value="philosophy/content/content_thebinaryspectrum.html"-->
+
+<!--#set var="lastUpdate" value="April 9, 2024" -->
+
+<!--#include virtual="../template_page.shtml" -->
