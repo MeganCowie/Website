@@ -33,10 +33,9 @@
 
 .leftpane-head-purp {
   display: flex;
-  justify-content: left;
+  width: 200px;
   align-items: flex-end;
-  flex-grow: 1;
-  padding: 20px; 
+  padding: 0px 0px 10px 30px; 
   color: #ffffff;
   background: #34293f;
   font-size: 20px;
@@ -173,8 +172,7 @@
       }
     .leftpane-head-purp {
       display: flex;
-      justify-content: flex-start;
-      align-items: flex-end;
+      width: 100%;
       color: #ffffff;
       padding: 0px 0px 10px 20px; 
       }

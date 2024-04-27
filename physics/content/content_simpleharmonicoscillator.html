@@ -1,0 +1,36 @@
+<p>One thing I really want to be able to do with this website is to make figures which people ('users') can interact with. In other words, I want to build applications ("apps", or widgets, or graphical user interfaces) which dynamically update in response to user inputs. </p>
+<br>
+<p>There are a fair few data visualization and analysis platforms for building apps. One example is Montreal's own Plotly Dash. I used Dash during my PhD, and it was a helpful tool for me. Sharing my Dash app with others, however, requires that the app is built by another computer called a server. You can rent servers quite cheaply, but I'm a bit of a "do-it-myself" stickler and found this idea unappealing. The "do-it-myself" avenue would require that I buy a server, but it's expensive, and dealing with hardware upkeep for such a small website doesn't make much sense for me.</p>
+<br>
+<p>PyScript is a brand-new tool that was released in 2022. The appeal is that you don't need a server -- the calculator, controls, callbacks, and plotter can be written right inside the html of this website, and theoretically eliminates my server dilemma. Here is a simple app I wrote to introduce myself to PyScript. In this example, the sine wave plot updates when the user moves the sliders.</p>
+<br>
+
+<div class="bokeh_elements">
+    <div class="bokeh_sliders">
+        <div id="sliders_learningpyscript"></div>
+    </div>
+    <div class="bokeh_plots">
+        <div id="plots_learningpyscript"></div>
+    </div>
+
+    <!-- -->
+    <script type="py" 
+            src="scripts/script_simpleharmonicoscillator.py"
+            config='{"packages": [
+            "numpy<=1.26.4",
+            "https://cdn.holoviz.org/panel/0.14.3/dist/wheels/bokeh-2.4.3-py3-none-any.whl"
+            ]}'>
+    </script>
+</div>
+<br><p>PyScript is a bit slow to load (~1 second), but that's definitely faster than the free Heroku hosting I tried a while ago. What remains to be seen is whether I can write all of my semiconductor stuff in PyScript, or whether it might be too computationally demanding somehow. But, there are no fancy packages for my stuff - only numpy, which is used in the example above - so things look promising.</p>
+<br>
+
+<div class="code-box">
+    <code class="code">
+        def hello_world():
+            print("Hello, world!")
+    </code>
+</div>
+
+<br>
+<p>This whole website can be found on GitHub. See the GitHub icon in the navigation pane (left) for the source code.</p>

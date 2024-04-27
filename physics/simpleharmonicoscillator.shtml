@@ -3,7 +3,7 @@
 <!--#set var="categoryspacer" value=" /" -->
 
 <!--#set var="pageTitle" value="The simple harmonic oscillator" -->
-<!--#set var="content" value="physics/content/content_empty.html"-->
+<!--#set var="content" value="physics/content/content_simpleharmonicoscillator.html"-->
 
 <!--#set var="lastUpdate" value="April 9, 2024" -->
 
