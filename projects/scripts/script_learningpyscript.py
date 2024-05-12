@@ -40,9 +40,6 @@ plot1.xaxis.axis_label_text_font_style = "normal"
 plot1.yaxis.axis_label_text_font_style = "normal" 
 plot1.line(x_fn(),y_fn(slider_amplitude_initialvalue,slider_frequency_initialvalue,x_fn()),line_width=2)
 
-# Layout
-sliders = Column(slider_amplitude, slider_frequency, sizing_mode="scale_width")
-plots = Row(plot1, sizing_mode="scale_width")
 
 # Callback
 def update_data(attrname, old, new):
@@ -51,13 +48,17 @@ def update_data(attrname, old, new):
     
     x = x_fn()
     y = y_fn(amplitude,frequency,x)
-   
+    
     plot1.renderers.clear()
-    plot1.line(x,y,line_width=2)
+    plot1.line(x,y,line_width=2,color='#1f77b4')
 
 slider_amplitude.on_change('value', update_data)
 slider_frequency.on_change('value', update_data)
 
+
+# Layout
+sliders = Column(slider_amplitude, slider_frequency, sizing_mode="scale_width")
+plots = Row(plot1, sizing_mode="scale_width")
 
 
 #### RENDERING ############################

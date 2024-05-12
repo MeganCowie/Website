@@ -5,6 +5,6 @@
 <!--#set var="pageTitle" value="Learning pyscript" -->
 <!--#set var="content" value="projects/content/content_learningpyscript.html"-->
 
-<!--#set var="lastUpdate" value="April 9, 2024" -->
+<!--#set var="lastUpdate" value="April 27, 2024" -->
 
 <!--#include virtual="../template_page.shtml" -->

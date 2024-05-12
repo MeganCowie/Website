@@ -1,9 +1,10 @@
 *{
   margin: 0;
   padding:0;
-  font-family: 'Poppins', sans-serif;
   box-sizing: border-box;
-  }
+  font-family: 'Poppins', sans-serif;
+  font-size: 16px;
+}
 
 /*----------------------------------WRAPPERS----------------------------------*/
 
@@ -27,6 +28,9 @@
   }
 
 .leftpane-head-pink {
+  display: flex;
+  justify-content: center;
+  align-items: center;
   width: 100px;
   background: #a45c8e;
   }
@@ -35,19 +39,18 @@
   display: flex;
   width: 200px;
   align-items: flex-end;
-  padding: 0px 0px 10px 30px; 
+  padding: 20px; 
   color: #ffffff;
   background: #34293f;
-  font-size: 20px;
+  font-size: 1.2em;
   font-weight: 400;
   }
 
 .leftpane-head-bunny {
-  position: absolute;
-  top: 0px;
-  left: 28px;
-  width: 100px;
-  height: 120px;
+  position: relative;
+  margin: 10px;
+  width: 100%;
+  height: 100%;
   }
 
 .leftpane-head-bunny a {
@@ -83,6 +86,7 @@
   padding: 0px;
   margin: 20px;
   width: 100%;
+  font-size: 1em;
   }
 
 /*----- Right pane ----- */
@@ -156,6 +160,7 @@
       margin-left: 0px;
       width: 100%; 
       flex: 0 0 70px; 
+      overflow-y: hidden;
     }
     .leftpane-head {
       height: 70px;
@@ -164,17 +169,12 @@
       width: 80px;
       }
     .leftpane-head-bunny {
-      position: absolute;
-      top: 10px;
-      left: 0px;
       width: 80px;
       height: 50px;
       }
     .leftpane-head-purp {
-      display: flex;
       width: 100%;
       color: #ffffff;
-      padding: 0px 0px 10px 20px; 
       }
     .leftpane-links {
       margin-left: 40px;
@@ -223,6 +223,13 @@
       background: #635471;
     }             
   }
+
+  @media (max-width: calc(80px + 12em + 4em + 40px)) {
+    .leftpane-head-purp {
+      color: transparent
+    }
+  }
+
   
 /*-----------------------------GENERAL FORMATTING-----------------------------*/
 
@@ -246,7 +253,7 @@ span{
   font-weight: 300;
   }
 code{
-  font-size: 1em;
+  font-size: 16px;
   font-family: monospace;
   }
 h1{
@@ -344,35 +351,80 @@ li a{
     }
   }
 
-/*---------------------------------- BOKEH -----------------------------------*/
-.bokeh_elements{
-  display: flex;
-  width: 100%;
+/*------------------------------ SPECIAL ELEMENTS -------------------------------*/
+
+.divider {
+  text-align: center;
+  font-size: 24px;
+  letter-spacing: 10px;
+  color:#777;
+}
+.fig-horizontal {
+  display: block;
+}
+.fig-vertical {
+  display: none;
 }
 
-.bokeh_sliders {
-  text-align: center;
-  width: 40%;
+.code-box {
+  display: flex;
+  border: 1px solid #cecece;
+  background-color: #fafafa;
+  border-radius: 5px;
+  margin: 0px 50px 0px 50px;
+  width: calc(100% - 100px);
+  overflow-x: auto;
   padding: 20px;
 }
 
-.bokeh_plots {
-  width: 60%;
+.bokeh-elements{
+  display: flex;
+  margin: 0px;
+  width: 100%
+}
+.bokeh-sliders {
+  text-align: left;
+  width: 30%;
+  padding-right: 20px;
+  padding-bottom: 0px;
+}
+.bokeh-plots {
+  width: 70%;
+}
+
+@media (max-width: 1200px) {
+  .code-box {
+    margin: 0px;
+    width: 100%;
+  }
+  .bokeh-elements {
+    margin: 0px;
+    width: 100%;
+  }
+  .fig-horizontal {
+    display: none;
+  }
+  .fig-vertical {
+    display: block;
+  }
 }
 
 @media (max-width: 900px) {
-  .bokeh_elements{
+  .bokeh-elements{
     display: block;
     margin: 0px;
   }
-  .bokeh_sliders {
+  .bokeh-sliders {
     width: 100%;
+    padding-right: 0px;
+    padding-bottom: 20px;
   }
-  .bokeh_plots {
+  .bokeh-plots {
     width: 100%;
   }
 }
-  
+
+
 /*-------------------------------- RESOURCES ---------------------------------*/
 /*
 Fonts: https://fonts.google.com/

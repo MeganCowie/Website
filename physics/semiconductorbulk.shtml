@@ -1,0 +1,10 @@
+<!--#set var="categoryName" value="Physics" -->
+<!--#set var="categoryLink" value="/physics/semiconductorbulk.shtml" -->
+<!--#set var="categoryspacer" value=" /" -->
+
+<!--#set var="pageTitle" value="The semiconductor bulk" -->
+<!--#set var="content" value="physics/content/content_semiconductorbulk.html"-->
+
+<!--#set var="lastUpdate" value="May 11, 2024" -->
+
+<!--#include virtual="../template_page.shtml" -->

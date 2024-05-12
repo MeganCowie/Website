@@ -5,6 +5,6 @@
 <!--#set var="pageTitle" value="Building this website" -->
 <!--#set var="content" value="projects/content/content_thiswebsite.html"-->
 
-<!--#set var="lastUpdate" value="April 9, 2024" -->
+<!--#set var="lastUpdate" value="April 28, 2024" -->
 
 <!--#include virtual="../template_page.shtml" -->

@@ -1,0 +1,356 @@
+import asyncio
+import json
+import pyodide
+import numpy as np
+import scipy.constants as sp
+from scipy.optimize import fsolve
+
+
+from js import Bokeh, console, JSON
+from bokeh import __version__
+from bokeh.embed.util import OutputDocumentFor, standalone_docs_json_and_render_items
+from bokeh.plotting import figure
+from bokeh.models import Slider, Range1d, Spacer, Div, PrintfTickFormatter
+from bokeh.layouts import Column, Row, gridplot
+from bokeh.protocol.messages.patch_doc import process_document_events
+
+#### CONTROLS, CALLBACKS, AND CALCULATIONS ############################                
+
+# Physical constants
+kB = sp.value('Boltzmann constant') #J/K
+hbar = sp.value('Planck constant')/(2*sp.pi) #J*s
+me = sp.value('electron mass') #kg
+e = sp.e #C
+epsilon_o = sp.value('vacuum electric permittivity') #C/(V*m)
+
+# Initial slider values
+slider_Nd_initialvalue = 16
+slider_Na_initialvalue = 0
+slider_Eg_initialvalue = 0.8
+slider_mn_initialvalue = 0.5
+slider_mp_initialvalue = 1.5
+slider_T_initialvalue = 500
+
+# Sliders
+slider_Nd = Slider(start=14, end=20, value=slider_Nd_initialvalue, step=0.1, title="log(Donor conc. (#/cm^3))", height=50, sizing_mode="scale_width")
+slider_Na = Slider(start= 14, end=20, value=slider_Na_initialvalue, step=0.1, title="log(Acceptor conc. (#/cm^3))", height=50, sizing_mode="scale_width")
+slider_Eg = Slider(start=0.5, end=1.5, value=slider_Eg_initialvalue, step=0.1, title="Band gap (eV)", height=50, sizing_mode="scale_width")
+slider_mn = Slider(start=0.1, end=2, value=slider_mn_initialvalue, step=0.1, title="Elec. eff. mass", height=50, sizing_mode="scale_width")
+slider_mp = Slider(start=0.1, end=2, value=slider_mp_initialvalue, step=0.1, title="Hole eff. mass", height=50, sizing_mode="scale_width")
+slider_T = Slider(start=100, end=1000, value=slider_T_initialvalue, step=10, title="Temperature (K)", height=50, sizing_mode="scale_width")
+
+# Variables
+def Var_f():
+    f = np.arange(0, 1.1, 0.1)
+    return f
+def Var_E():
+    E = np.arange(0, 3.1, 0.01)
+    return E
+
+# Electron and hole Fermi-dirac distributions
+    # Pierret Semiconductor Fundamentals, Vol 1, Ed 2 (pg 38)
+    # Neamen Semiconductor Physics & Devices, Ed 2 (pg 71)
+    # Jonscher Solid Semiconductors (pg 12-13)
+def Func_fcfv(E,Ef,T): # dimensionless
+    fc = np.reciprocal(np.exp((E-Ef)/(kB*T))+1)
+    fv = 1-np.reciprocal(np.exp((E-Ef)/(kB*T))+1)
+    return fc, fv
+
+# Maxwell Boltzmann probability distribution
+    # Neamen Semiconductor Physics & Devices, Ed 2 (pg 75)
+def Func_MaxwellBoltzmann(E,Ef,T): #dimensionless
+    fb = np.reciprocal(np.exp((E-Ef)/(kB*T)))
+    return fb
+
+# Density of states in the conduction and valence bands
+    # Pierret Semiconductor Fundamentals, Vol 1, Ed 2 (pg 36)
+    # Neamen Semiconductor Physics & Devices, Ed 2 (pg 69-70)
+def Func_gcgv(E,Ec,Ev,mn,mp): # /(J*m**3)
+    Earg=E-Ec
+    Earg[Earg<0]=0
+    gc = 1/(2*sp.pi**2)*((2*mn)/(hbar**2))**(3/2)*np.sqrt(Earg)
+    Earg=Ev-E
+    Earg[Earg<0]=0
+    gv = 1/(2*sp.pi**2)*((2*mp)/(hbar**2))**(3/2)*np.sqrt(Earg)
+    return gc, gv
+
+# Number of electrons/holes in the conduction/valence band
+    # Pierret Semiconductor Fundamentals, Vol 1, Ed 2 (pg 43)
+    # Neamen Semiconductor Physics & Devices, Ed 2 (pg 86)
+    # Jonscher Solid Semiconductors (pg 29)
+def Func_NeNh(E, fc, fv, gc, gv, Ec, Ev): # /(J*m**3)
+    Ne=fc*gc
+    Ne[E<Ec]=0
+    Nh=fv*gv
+    Nh[E>Ev]=0
+
+    print([max(Ne),max(Nh)])
+    #print([Ec,Ev])
+    #print([max(fc),max(fv)])
+    #print([max(gc),max(gv)])
+
+    return Ne, Nh
+
+# effective density of conduction and valence band states
+    # Pierret Semiconductor Fundamentals, Vol 1, Ed 2 (pg 44)
+    # Neamen Semiconductor Physics & Devices, Ed 2 (pg 89-91)
+    # Sze Physics of Semiconductor Devices (pg 19)
+def Func_NCNV(T, mn, mp): # /(m**3)
+    NC = 1/np.sqrt(2)*((mn*kB*T)/(sp.pi*hbar**2))**(3/2)
+    NV = 1/np.sqrt(2)*((mp*kB*T)/(sp.pi*hbar**2))**(3/2)
+    return NC, NV
+
+# conduction and valence arbitrary energies
+# The conduction band level does not impact the Vs or F, so set arbitrarily as 1 for now
+# We only need absolute eneries for drawing the band diagram. See CPD definition below. 
+    # Jonscher Solid Semiconductors (pg 30)
+def Func_EcEv(Eg): # J
+    Ev = 1*e
+    Ec = Ev+Eg
+    return Ec, Ev
+
+# intrinsic carrier density
+    # Pierret Semiconductor Fundamentals, Vol 1, Ed 2 (pg 46)
+    # Neamen Semiconductor Physics & Devices, Ed 2 (pg 92)
+def Func_ni(NC, NV, Eg, T): # 1/m**3
+    ni = np.sqrt(NC*NV)*np.exp(-Eg/(2*kB*T))
+    return ni
+
+# electron and hole thermal concentrations
+    # Pierret Semiconductor Fundamentals, Vol 1, Ed 2 (pg 45)
+    # Neamen Semiconductor Physics & Devices, Ed 2 (pg 89-91)
+    # Jonscher Solid Semiconductors (pg 30-31)
+def Func_nopo(NC, NV, Ec, Ev, Ef, T): # 1/m**3
+    no = NC * np.exp((-Ec+Ef)/(kB*T))
+    po = NV * np.exp((Ev-Ef)/(kB*T))
+    return no, po
+
+# Intrinsic level
+    # Pierret Semiconductor Fundamentals, Vol 1, Ed 2 (pg 52)
+    # Neamen Semiconductor Physics & Devices, Ed 2 (pg 94)
+    # Jonscher Solid Semiconductors (pg 31)
+def Func_Ei(Ev, Ec, T, mn, mp): # J
+    Ei = (Ec+Ev)/2+(1/2)*kB*T*np.log(mp/mn)
+    return Ei
+
+# Total carrier concentrations in the bulk
+    # Neamen Semiconductor Physics & Devices, Ed 2 (pg 115)
+    # Sze Physics of Semiconductor Devices (pg 32)
+def Func_nbpb(Na, Nd, ni): # /m**3
+    if Na <=1e-9: #n-type
+        nb = (Nd-Na)/2+np.sqrt(((Nd-Na)/2)**2+ni**2)
+        pb = ni**2/nb
+    elif Nd <= 1e-9: #p-type
+        pb = (Na-Nd)/2+np.sqrt(((Na-Nd)/2)**2+ni**2)
+        nb = ni**2/pb
+    return nb,pb
+
+# Fermi level
+    # Pierret Semiconductor Fundamentals, Vol 1, Ed 2 (pg 49)
+    # Neamen Semiconductor Physics & Devices, Ed 2 (pg 115)
+    # Jonscher Solid Semiconductors (pg 33)
+def Func_Ef(NC, NV, Ec, Ev, T, Nd, Na): # J
+    guess = -1*e
+    def Ef_eqn(Ef_soln):
+        no, po = Func_nopo(NC, NV, Ec, Ev, Ef_soln, T)
+        expression = po-no+Nd-Na
+        return expression
+    Ef = fsolve(Ef_eqn, guess)[0]
+    return Ef
+
+
+# Calculator
+def calculator(E,f,Nd,Na,Eg,mn,mp,T):
+    
+    # Unit conversions to SI
+    E = E*e #J
+    f = f
+
+    #Nd_units = (10**slider_Nd)/(1e15)
+    #Na_units = (10**slider_Na)/(1e15)
+
+    Nd = round(10**Nd)*(1e6) #m-3
+    Na = round(10**Na)*(1e6) #m-3
+    Eg = Eg*e #J
+    mn = mn*me #kg
+    mp = mp*me #kg
+    T = T #K
+
+    # Calculations
+    Ec, Ev = Func_EcEv(Eg)
+    NC, NV = Func_NCNV(T,mn,mp)
+    Ei = Func_Ei(Ev,Ec,T,mn,mp)
+    Ef = Func_Ef(NC,NV,Ec,Ev,T,Nd,Na)
+    gc, gv = Func_gcgv(E,Ec,Ev,mn,mp)
+    fc, fv = Func_fcfv(E,Ef,T)
+    Ne, Nh = Func_NeNh(E,fc,fv,gc,gv,Ec,Ev)
+
+    # Unit conversions from SI
+    E = E/e #eV
+    Ec = Ec/e #eV
+    Ev = Ev/e #eV
+    Ei = Ei/e #eV
+    Ef = Ef/e #eV
+    fc = fc
+    fv = fv
+    gc = gc*e/(1000**3) #/eV cm^3
+    gv = gv*e/(1000**3) #/eV cm^3
+    #Ne = Ne*e/(1000**3) #/cm^3
+    #Nh = Nh*e/(1000**3) #/cm^3
+    return E,f,Ec,Ev,Ei,Ef,fc,fv,gc,gv,Ne,Nh
+
+# Initial calculated values
+E_initialvalue,f_initialvalue,Ec_initialvalue,Ev_initialvalue,Ei_initialvalue,Ef_initialvalue,fc_initialvalue,fv_initialvalue,gc_initialvalue,gv_initialvalue,Ne_initialvalue,Nh_initialvalue = calculator(Var_E(),Var_f(),slider_Nd_initialvalue,slider_Na_initialvalue,slider_Eg_initialvalue,slider_mn_initialvalue,slider_mp_initialvalue,slider_T_initialvalue)
+
+# Axes limits & ticks
+def Axis_RoundupExp10(maxval):
+    maxval_roundup = 10**np.ceil(np.log10(maxval))
+    return maxval_roundup
+
+xlim_1 = [0,0.5,1]
+xlim_2 = [0,10**19]
+xlim_3_initialvalue = [0,np.max([Ne_initialvalue,Nh_initialvalue])]
+ylim = [0,3]
+
+# Colours
+color_fc='#2ca02c'
+color_fv='#bcbd22'
+color_Ef='#1f77b4'
+color_Ei='#17becf'
+color_Ev='#9467bd'
+color_Ec='#e377c2'
+color_n='#ff7f0e'
+color_p='#8c564b'
+color_ox='#a9a9a9'
+color_met='#2f4f4f'
+color_vac='#888888'
+color_indicator='#2ca02c'
+color_other='#2f4f4f'
+
+# Plot
+plot1 = figure(height=300, sizing_mode="stretch_width", toolbar_location=None)
+plot1.line(f_initialvalue, Ec_initialvalue, color=color_Ec, line_width=2)
+plot1.line(f_initialvalue, Ev_initialvalue, color=color_Ev, line_width=2)
+plot1.line(f_initialvalue, Ei_initialvalue, color=color_Ei, line_width=2)
+plot1.line(f_initialvalue, Ef_initialvalue, color=color_Ef, line_width=2)
+plot1.line(fc_initialvalue, E_initialvalue, color=color_fc, line_width=2)
+plot1.line(fv_initialvalue, E_initialvalue, color=color_fv, line_width=2)
+plot1.x_range = Range1d(xlim_1[0],xlim_1[2])
+plot1.y_range = Range1d(ylim[0],ylim[1])
+plot1.xaxis.axis_label = "f(E)"
+plot1.yaxis.axis_label = "Energy (eV)"
+plot1.xaxis.axis_label_text_font_style = "normal" 
+plot1.yaxis.axis_label_text_font_style = "normal"
+plot1.xaxis.ticker = xlim_1
+
+plot2 = figure(height=300, sizing_mode="stretch_width", toolbar_location=None)
+plot2.line(gc_initialvalue,E_initialvalue,line_width=2, color=color_Ec)
+plot2.line(gv_initialvalue,E_initialvalue,line_width=2, color=color_Ev)
+plot2.x_range = Range1d(xlim_2[0],xlim_2[1])
+plot2.y_range = Range1d(ylim[0],ylim[1])
+plot2.xaxis.axis_label = "g(E) (/eV cm^3)"
+plot2.yaxis.axis_label = " "
+plot2.xaxis.axis_label_text_font_style = "normal" 
+plot2.yaxis.axis_label_text_font_style = "normal" 
+plot2.xaxis.ticker = xlim_2
+plot2.xaxis.formatter = PrintfTickFormatter(format='%.1e')
+
+
+plot3 = figure(height=300, sizing_mode="stretch_width", toolbar_location=None)
+plot3.line(Ne_initialvalue, E_initialvalue, color=color_n, line_width=2)
+plot3.line(Nh_initialvalue, E_initialvalue, color=color_p, line_width=2)
+plot3.x_range = Range1d(xlim_3_initialvalue[0],xlim_3_initialvalue[1])
+plot3.y_range = Range1d(ylim[0],ylim[1])
+plot3.xaxis.axis_label = "Carriers (/cm^3)"
+plot3.yaxis.axis_label = " "
+plot3.xaxis.axis_label_text_font_style = "normal" 
+plot3.yaxis.axis_label_text_font_style = "normal" 
+plot3.xaxis.ticker = xlim_3_initialvalue
+plot3.xaxis.formatter = PrintfTickFormatter(format='%.1e')
+
+
+# Layout
+sliders = Column(slider_Nd, slider_Na, slider_Eg, slider_mn, slider_mp, slider_T, sizing_mode="scale_width")
+plots = Row(plot1,plot2,plot3, sizing_mode="scale_width")
+
+
+# Callback
+def update_data(attrname, old, new):
+
+    E,f,Ec,Ev,Ei,Ef,fc,fv,gc,gv,Ne,Nh = calculator(Var_E(),Var_f(),slider_Nd.value,slider_Na.value,slider_Eg.value,slider_mn.value,slider_mp.value,slider_T.value)
+
+    xlim_3 = [0,np.max([Ne,Nh])]
+
+    plot1.renderers.clear()
+    plot1.line(f, Ec, color=color_Ec, line_width=2)
+    plot1.line(f, Ev, color=color_Ev, line_width=2)
+    plot1.line(f, Ei, color=color_Ei, line_width=2)
+    plot1.line(f, Ef, color=color_Ef, line_width=2)
+    plot1.line(fc, E, color=color_fc, line_width=2)
+    plot1.line(fv, E, color=color_fv, line_width=2)
+
+    plot2.renderers.clear()
+    plot2.line(gc, E, color=color_Ec, line_width=2)
+    plot2.line(gv, E, color=color_Ev, line_width=2)
+
+    plot3.renderers.clear()
+    plot3.line(Ne, E, color=color_n, line_width=2)
+    plot3.line(Nh, E, color=color_p, line_width=2)
+    plot3.x_range.start = xlim_3[0]
+    plot3.x_range.end = xlim_3[1]
+    plot3.xaxis.ticker = xlim_3
+
+
+slider_Nd.on_change('value', update_data)
+slider_Na.on_change('value', update_data)
+slider_Eg.on_change('value', update_data)
+slider_mn.on_change('value', update_data)
+slider_mp.on_change('value', update_data)
+slider_T.on_change('value', update_data)
+
+
+
+#### RENDERING ############################
+def doc_json(model, target):
+    with OutputDocumentFor([model]) as doc:
+        doc.title = ""
+        docs_json, _ = standalone_docs_json_and_render_items(
+            [model], suppress_callback_warning=True
+        )
+    doc_json = list(docs_json.values())[0]
+    root_id = doc_json['roots']['root_ids'][0]
+
+    return doc, json.dumps(dict(
+        target_id = target,
+        root_id   = root_id,
+        doc       = doc_json,
+        version   = __version__,
+    ))
+
+def _link_docs(pydoc, jsdoc):
+    def jssync(event):
+        if getattr(event, 'setter_id', None) is not None:
+            return
+        events = [event]
+        json_patch = jsdoc.create_json_patch_string(pyodide.ffi.to_js(events))
+        pydoc.apply_json_patch(json.loads(json_patch))
+
+    jsdoc.on_change(pyodide.ffi.create_proxy(jssync), pyodide.ffi.to_js(False))
+
+    def pysync(event):
+        json_patch, buffers = process_document_events([event], use_buffers=True)
+        buffer_map = {}
+        for (ref, buffer) in buffers:
+            buffer_map[ref['id']] = buffer
+        jsdoc.apply_json_patch(JSON.parse(json_patch), pyodide.ffi.to_js(buffer_map), setter_id='js')
+
+    pydoc.on_change(pysync)
+
+async def show(object, target):
+    pydoc, model_json = doc_json(object, target)
+    views = await Bokeh.embed.embed_item(JSON.parse(model_json))
+    jsdoc = views[0].model.document
+    _link_docs(pydoc, jsdoc)
+
+asyncio.ensure_future(show(sliders, 'sliders_learningpyscript'))
+asyncio.ensure_future(show(plots, 'plots_learningpyscript'))

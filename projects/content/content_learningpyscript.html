@@ -1,145 +1,345 @@
-<p>One thing I really want to be able to do with this website is to make figures which people ('users') can interact with. In other words, I want to build applications ("apps", or widgets, or graphical user interfaces) which dynamically update in response to user inputs. </p>
+<p>One thing I want to be able to do with this website is make figures which people can interact with. The most basic task I'd like to accomplish is to make plots which update when a slider is moved. (I'm a physicist, so I like plots!) In the future, it will also be fun to try and include diagrams, or even make interactive animations.</p>
 <br>
-<p>There are a fair few data visualization and analysis platforms for building apps. One example is Montreal's own Plotly Dash. I used Dash during my PhD, and it was a helpful tool for me. Sharing my Dash app with others, however, requires that the app is built by another computer called a server. You can rent servers quite cheaply, but I'm a bit of a "do-it-myself" stickler and found this idea unappealing. The "do-it-myself" avenue would require that I buy a server, but it's expensive, and dealing with hardware upkeep for such a small website doesn't make much sense for me.</p>
+<p>There are a fair few data visualization and analysis platforms out there for building exactly these kinds of widgets. One example is Montreal's own Plotly Dash. I used Dash during my PhD, and it was a very helpful tool for me. My Dash app is written in Python, however, so sharing it with other people requires either that: 1) they download my code from GitHub, build the required python environment, and deploy the app on their local machine; or 2) I build a website and deploy my app on a server. In the second scenario, it's the server that runs the python code, and the person I'm trying to share my app with doesn't need to do anything except access the website. Apparently, it could be quite cheap to deploy my app on a third-party server, but I'm a bit of a "do-it-myself" stickler and find this idea unappealing. The "do-it-myself" version of running my python app on a website requires that I buy a server, but dealing with hardware upkeep for such a small website is not something I'm particularly interested in.</p>
 <br>
-<p>PyScript is a brand-new tool that was released in 2022. The appeal is that you don't need a server -- the calculator, controls, callbacks, and plotter can be written right inside the html of this website, and theoretically eliminates my server dilemma. Here is a simple app I wrote to introduce myself to PyScript. In this example, the sine wave plot updates when the user moves the sliders.</p>
+<p>In excellent timing as I came to realize this dilemma, PyScript emerged. PyScript is a new tool, released in 2022, which allows python code to be run in the browser. The python environment and script are written directly within the website html, and there is no need for a server to run the python code. What kind of wizardry is this!! Yay - it seems that PyScript eliminates my server dilemma. The caveats are that PyScript is still under heavy development so things will be changing a lot (i.e. it's probably unstable), and that the widgets are slow to load (~1 second), since the python environment needs to be re-built every time the web page is loaded. Neither of these are dealbreakers for my little website, though, and I'm very curious to see how well this magical new tool works.</p>
+<br>    
+<p>Here is a simple app I wrote to introduce myself to PyScript. In this example, the sine wave plot updates when you interact with the sliders:</p>
 <br>
 
-<div class="bokeh_elements">
-    <div class="bokeh_sliders">
+<div class="bokeh-elements">
+    <div class="bokeh-sliders">
         <div id="sliders_learningpyscript"></div>
     </div>
-    <div class="bokeh_plots">
+    <div class="bokeh-plots">
         <div id="plots_learningpyscript"></div>
     </div>
 
-    <!--src="scripts/script_learningpyscript.py"-->
+    <!---src="scripts/script_learningpyscript.py--->
     <script type="py" 
             config='{"packages": [
-            "numpy<=1.26.4",
-            "https://cdn.holoviz.org/panel/0.14.3/dist/wheels/bokeh-2.4.3-py3-none-any.whl"
-            ]}'>
+                "numpy<=1.26.4",
+                "https://cdn.holoviz.org/panel/0.14.3/dist/wheels/bokeh-2.4.3-py3-none-any.whl"
+                ]}'>
 
-            import asyncio
-            import json
-            import pyodide
-            import numpy as np
-            
-            from js import Bokeh, console, JSON
-            from bokeh import __version__
-            from bokeh.embed.util import OutputDocumentFor, standalone_docs_json_and_render_items
-            from bokeh.plotting import figure
-            from bokeh.models import Slider, Range1d, Spacer, Div
-            from bokeh.layouts import Column, Row
-            from bokeh.protocol.messages.patch_doc import process_document_events
-            
-            
-            #### CONTROLS, CALLBACKS, AND CALCULATIONS ############################                
-            
-            # Initial values
-            slider_amplitude_initialvalue = 0.5
-            slider_frequency_initialvalue = 0.5
-            
-            # Sliders
-            slider_amplitude = Slider(start=0, end=1, value=slider_amplitude_initialvalue, step=0.1, title="Amplitude (A)", height=50, sizing_mode="scale_width")
-            slider_frequency = Slider(start=0, end=1, value=slider_frequency_initialvalue, step=0.1, title="Frequency (f)", height=50, sizing_mode="scale_width")
-            
-            # Variables
-            def x_fn():
-                x = np.linspace(0, 10, 200)
-                return x
-            def y_fn(amplitude,frequency,x):
-                y = amplitude*np.sin(2*np.pi*frequency*x)
-                return y
-            
-            # Plot
-            plot1 = figure(height=200, sizing_mode="stretch_width")
-            plot1.x_range = Range1d(0,10)
-            plot1.y_range = Range1d(-1,1)
-            plot1.xaxis.axis_label = "x"
-            plot1.yaxis.axis_label = "y = A sin(2pi f x)"
-            plot1.xaxis.axis_label_text_font_style = "normal" 
-            plot1.yaxis.axis_label_text_font_style = "normal" 
-            plot1.line(x_fn(),y_fn(slider_amplitude_initialvalue,slider_frequency_initialvalue,x_fn()),line_width=2)
-            
-            # Layout
-            sliders = Column(slider_amplitude, slider_frequency, sizing_mode="scale_width")
-            plots = Row(plot1, sizing_mode="scale_width")
-            
-            # Callback
-            def update_data(attrname, old, new):
-                amplitude = slider_amplitude.value
-                frequency = slider_frequency.value
+                import asyncio
+                import json
+                import pyodide
+                import numpy as np
                 
-                x = x_fn()
-                y = y_fn(amplitude,frequency,x)
-               
-                plot1.renderers.clear()
-                plot1.line(x,y,line_width=2)
-            
-            slider_amplitude.on_change('value', update_data)
-            slider_frequency.on_change('value', update_data)
-            
-            
-            
-            #### RENDERING ############################
-            def doc_json(model, target):
-                with OutputDocumentFor([model]) as doc:
-                    doc.title = ""
-                    docs_json, _ = standalone_docs_json_and_render_items(
-                        [model], suppress_callback_warning=True
-                    )
-                doc_json = list(docs_json.values())[0]
-                root_id = doc_json['roots']['root_ids'][0]
-            
-                return doc, json.dumps(dict(
-                    target_id = target,
-                    root_id   = root_id,
-                    doc       = doc_json,
-                    version   = __version__,
-                ))
-            
-            def _link_docs(pydoc, jsdoc):
-                def jssync(event):
-                    if getattr(event, 'setter_id', None) is not None:
-                        return
-                    events = [event]
-                    json_patch = jsdoc.create_json_patch_string(pyodide.ffi.to_js(events))
-                    pydoc.apply_json_patch(json.loads(json_patch))
-            
-                jsdoc.on_change(pyodide.ffi.create_proxy(jssync), pyodide.ffi.to_js(False))
-            
-                def pysync(event):
-                    json_patch, buffers = process_document_events([event], use_buffers=True)
-                    buffer_map = {}
-                    for (ref, buffer) in buffers:
-                        buffer_map[ref['id']] = buffer
-                    jsdoc.apply_json_patch(JSON.parse(json_patch), pyodide.ffi.to_js(buffer_map), setter_id='js')
-            
-                pydoc.on_change(pysync)
-            
-            async def show(object, target):
-                pydoc, model_json = doc_json(object, target)
-                views = await Bokeh.embed.embed_item(JSON.parse(model_json))
-                jsdoc = views[0].model.document
-                _link_docs(pydoc, jsdoc)
-            
-            asyncio.ensure_future(show(sliders, 'sliders_learningpyscript'))
-            asyncio.ensure_future(show(plots, 'plots_learningpyscript'))
-
-
+                from js import Bokeh, console, JSON
+                from bokeh import __version__
+                from bokeh.embed.util import OutputDocumentFor, standalone_docs_json_and_render_items
+                from bokeh.plotting import figure
+                from bokeh.models import Slider, Range1d, Spacer, Div
+                from bokeh.layouts import Column, Row
+                from bokeh.protocol.messages.patch_doc import process_document_events
+                
+                
+                #### CONTROLS, CALLBACKS, AND CALCULATIONS ############################                
+                
+                # Initial values
+                slider_amplitude_initialvalue = 0.5
+                slider_frequency_initialvalue = 0.5
+                
+                # Sliders
+                slider_amplitude = Slider(start=0, end=1, value=slider_amplitude_initialvalue, step=0.1, title="Amplitude (A)", height=50, sizing_mode="scale_width")
+                slider_frequency = Slider(start=0, end=1, value=slider_frequency_initialvalue, step=0.1, title="Frequency (f)", height=50, sizing_mode="scale_width")
+                
+                # Variables
+                def x_fn():
+                    x = np.linspace(0, 10, 200)
+                    return x
+                def y_fn(amplitude,frequency,x):
+                    y = amplitude*np.sin(2*np.pi*frequency*x)
+                    return y
+                
+                # Plot
+                plot1 = figure(height=200, sizing_mode="stretch_width")
+                plot1.x_range = Range1d(0,10)
+                plot1.y_range = Range1d(-1,1)
+                plot1.xaxis.axis_label = "x"
+                plot1.yaxis.axis_label = "y = A sin(2pi f x)"
+                plot1.xaxis.axis_label_text_font_style = "normal" 
+                plot1.yaxis.axis_label_text_font_style = "normal" 
+                plot1.line(x_fn(),y_fn(slider_amplitude_initialvalue,slider_frequency_initialvalue,x_fn()),line_width=2)
+                
+                
+                # Callback
+                def update_data(attrname, old, new):
+                    amplitude = slider_amplitude.value
+                    frequency = slider_frequency.value
+                    
+                    x = x_fn()
+                    y = y_fn(amplitude,frequency,x)
+                    
+                    plot1.renderers.clear()
+                    plot1.line(x,y,line_width=2,color='#1f77b4')
+                
+                slider_amplitude.on_change('value', update_data)
+                slider_frequency.on_change('value', update_data)
+                
+                
+                # Layout
+                sliders = Column(slider_amplitude, slider_frequency, sizing_mode="scale_width")
+                plots = Row(plot1, sizing_mode="scale_width")
+                
+                
+                #### RENDERING ############################
+                def doc_json(model, target):
+                    with OutputDocumentFor([model]) as doc:
+                        doc.title = ""
+                        docs_json, _ = standalone_docs_json_and_render_items(
+                            [model], suppress_callback_warning=True
+                        )
+                    doc_json = list(docs_json.values())[0]
+                    root_id = doc_json['roots']['root_ids'][0]
+                
+                    return doc, json.dumps(dict(
+                        target_id = target,
+                        root_id   = root_id,
+                        doc       = doc_json,
+                        version   = __version__,
+                    ))
+                
+                def _link_docs(pydoc, jsdoc):
+                    def jssync(event):
+                        if getattr(event, 'setter_id', None) is not None:
+                            return
+                        events = [event]
+                        json_patch = jsdoc.create_json_patch_string(pyodide.ffi.to_js(events))
+                        pydoc.apply_json_patch(json.loads(json_patch))
+                
+                    jsdoc.on_change(pyodide.ffi.create_proxy(jssync), pyodide.ffi.to_js(False))
+                
+                    def pysync(event):
+                        json_patch, buffers = process_document_events([event], use_buffers=True)
+                        buffer_map = {}
+                        for (ref, buffer) in buffers:
+                            buffer_map[ref['id']] = buffer
+                        jsdoc.apply_json_patch(JSON.parse(json_patch), pyodide.ffi.to_js(buffer_map), setter_id='js')
+                
+                    pydoc.on_change(pysync)
+                
+                async def show(object, target):
+                    pydoc, model_json = doc_json(object, target)
+                    views = await Bokeh.embed.embed_item(JSON.parse(model_json))
+                    jsdoc = views[0].model.document
+                    _link_docs(pydoc, jsdoc)
+                
+                asyncio.ensure_future(show(sliders, 'sliders_learningpyscript'))
+                asyncio.ensure_future(show(plots, 'plots_learningpyscript'))                
 
     </script>
 </div>
-<br><p>PyScript is a bit slow to load (~1 second), but that's definitely faster than the free Heroku hosting I tried a while ago. What remains to be seen is whether I can write all of my semiconductor stuff in PyScript, or whether it might be too computationally demanding somehow. But, there are no fancy packages for my stuff - only numpy, which is used in the example above - so things look promising.</p>
+
+<br>
+<p>I'm no expert in the inner workings of PyScript, obviously, so I won't attempt to explain that here. But I will share my organizational approach, in case it's helpful to someone else out there who wants to make interactive plots using PyScript.</p>
+
+<br>
+<p>First of all, I decided to use Bokeh to create my widgets (sliders and a plot). I don't have a deep reason for this, other than that Bokeh is the first interactive visualization tool I tried for this purpose, and I liked it. The first step of setting up my interactive plots is to include the PyScript and Bokeh JavaScript libraries in the html header:</p>
 <br>
 
 <div class="code-box">
-    <code class="code">
-        def hello_world():
-            print("Hello, world!")
-    </code>
+<pre><code class="code">&lt;!--- html ---&gt;
+
+&lt;script type="module" src="https://pyscript.net/releases/2024.1.1/core.js"&gt;&lt;/script&gt;
+&lt;link rel="stylesheet" href="https://pyscript.net/releases/2024.1.1/core.css" /&gt;   
+
+&lt;script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-2.4.3.js" &gt;&lt;/script&gt;
+&lt;script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-gl-2.4.3.min.js" &gt;&lt;/script&gt;
+&lt;script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-widgets-2.4.3.min.js" &gt;&lt;/script&gt;
+&lt;script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-tables-2.4.3.min.js" &gt;&lt;/script&gt;
+&lt;script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-mathjax-2.4.3.min.js" &gt;&lt;/script&gt;
+&lt;script type="text/javascript"&gt; Bokeh.set_log_level("info"); &lt;/script>
+</code></pre>
 </div>
 
 <br>
-<p>This whole website can be found on GitHub. See the GitHub icon in the navigation pane (left) for the source code.</p>
+<p>Next comes the html organization. I created an html class (bokeh-elements) to contain the html divs which I will later populate with my sliders and plots (bokeh-sliders and bokeh-plots). The bokeh-elements div also contains the python script, which I'll get into later.</p>
+<br>
+
+<div class="code-box">
+<pre><code class="code">&lt;!--- html ---&gt;
+
+&lt;div class="bokeh-elements"&gt;
+    &lt;div class="bokeh-sliders"&gt;
+        &lt;div id="sliders_learningpyscript"&gt;&lt;/div&gt;
+    &lt;/div&gt;   
+    &lt;div class="bokeh-plots"&gt;
+        &lt;div id="plots_learningpyscript"&gt;&lt;/div&gt;
+    &lt;/div&gt;
+    &lt;script type="py" 
+        src="scripts/script_learningpyscript.py"
+        config='{"packages": [
+            "numpy&lt;=1.26.4",
+            "https://cdn.holoviz.org/panel/0.14.3/dist/wheels/bokeh-2.4.3-py3-none-any.whl"
+        ]}'&gt;
+    &lt;/script&gt;
+&lt;/div&gt; 
+</code></pre>
+</div>
+
+<br>
+<p>The purpose of creating separate divs for the sliders and the plots is so that we can use regular css formatting to set the layout of those widgets on our webpage. In particular, this makes it much easier to make the layout responsive (e.g. the layout changes depending on the screen width). In my case, I have organized my widget divs with the following minimal css. The sliders and plots are positioned next to each other for large screen widths, but are vertically stacked for small screen widths. My feeling is that trying to control the layout responsively on the python side, with the sliders and plots in the same div, would be much messier.</p>
+<br>
+
+<div class="code-box">
+    <pre><code class="code">/* css */
+    
+.bokeh-elements{
+    display: flex;
+    margin: 0px 50px 0px 50px;
+    width: calc(100% - 100px);
+    }
+.bokeh-sliders {
+    text-align: center;
+    width: 40%;
+    padding-right: 20px;
+    padding-bottom: 0px;
+    }
+.bokeh-plots {
+    width: 60%;
+    }
+
+@media (max-width: 900px) {
+    .bokeh-elements{
+        display: block;
+        margin: 0px;
+    }
+    .bokeh-sliders {
+        width: 100%;
+        padding-right: 0px;
+        padding-bottom: 20px;
+    }
+    .bokeh-plots {
+        width: 100%;
+    }
+}
+</code></pre>
+</div>
+
+<br>
+<p>There are different ways to organize the contents of the script tag, but so far I have found this way the easiest: Write the python script in a separate file and point to it using the source (src) attribute of the script tag; and include the python configuration database (config) as inline html. I did try a non-inline alternative, where I instead pointed to a separate .json or .toml file. That worked on my local Apache server, but apparently my website host does not accept .json or .toml file formats, which so far has killed that approach for me. My python environment doesn't include many packages, however, so I don't mind the in-line python configuration for now.</p>
+<br> 
+<p>My python file has two halves. The first half is where controls, callbacks, and calculations are defined. In the second half, the widgets are rendered on the webpage.</p>
+<br>
+
+<div class="code-box">
+<pre><code class="code"># python
+
+import asyncio
+import json
+import pyodide
+import numpy as np
+
+from js import Bokeh, console, JSON
+from bokeh import __version__
+from bokeh.embed.util import OutputDocumentFor, standalone_docs_json_and_render_items
+from bokeh.plotting import figure
+from bokeh.models import Slider, Range1d, Spacer, Div
+from bokeh.layouts import Column, Row
+from bokeh.protocol.messages.patch_doc import process_document_events
+
+
+#### CONTROLS, CALLBACKS, AND CALCULATIONS ############################                
+
+# Initial values
+slider_amplitude_initialvalue = 0.5
+slider_frequency_initialvalue = 0.5
+
+# Sliders
+slider_amplitude = Slider(start=0, end=1, value=slider_amplitude_initialvalue, step=0.1, title="Amplitude (A)", height=50, sizing_mode="scale_width")
+slider_frequency = Slider(start=0, end=1, value=slider_frequency_initialvalue, step=0.1, title="Frequency (f)", height=50, sizing_mode="scale_width")
+
+# Variables
+def x_fn():
+    x = np.linspace(0, 10, 200)
+    return x
+def y_fn(amplitude,frequency,x):
+    y = amplitude*np.sin(2*np.pi*frequency*x)
+    return y
+
+# Plot
+plot1 = figure(height=200, sizing_mode="stretch_width")
+plot1.x_range = Range1d(0,10)
+plot1.y_range = Range1d(-1,1)
+plot1.xaxis.axis_label = "x"
+plot1.yaxis.axis_label = "y = A sin(2pi f x)"
+plot1.xaxis.axis_label_text_font_style = "normal" 
+plot1.yaxis.axis_label_text_font_style = "normal" 
+plot1.line(x_fn(),y_fn(slider_amplitude_initialvalue,slider_frequency_initialvalue,x_fn()),line_width=2)
+
+# Callback
+def update_data(attrname, old, new):
+    amplitude = slider_amplitude.value
+    frequency = slider_frequency.value
+    
+    x = x_fn()
+    y = y_fn(amplitude,frequency,x)
+    
+    plot1.renderers.clear()
+    plot1.line(x,y,line_width=2,color='#1f77b4')
+
+slider_amplitude.on_change('value', update_data)
+slider_frequency.on_change('value', update_data)
+
+# Layout
+sliders = Column(slider_amplitude, slider_frequency, sizing_mode="scale_width")
+plots = Row(plot1, sizing_mode="scale_width")
+
+
+#### RENDERING ############################
+def doc_json(model, target):
+    with OutputDocumentFor([model]) as doc:
+        doc.title = ""
+        docs_json, _ = standalone_docs_json_and_render_items(
+            [model], suppress_callback_warning=True
+        )
+    doc_json = list(docs_json.values())[0]
+    root_id = doc_json['roots']['root_ids'][0]
+
+    return doc, json.dumps(dict(
+        target_id = target,
+        root_id   = root_id,
+        doc       = doc_json,
+        version   = __version__,
+    ))
+
+def _link_docs(pydoc, jsdoc):
+    def jssync(event):
+        if getattr(event, 'setter_id', None) is not None:
+            return
+        events = [event]
+        json_patch = jsdoc.create_json_patch_string(pyodide.ffi.to_js(events))
+        pydoc.apply_json_patch(json.loads(json_patch))
+
+    jsdoc.on_change(pyodide.ffi.create_proxy(jssync), pyodide.ffi.to_js(False))
+
+    def pysync(event):
+        json_patch, buffers = process_document_events([event], use_buffers=True)
+        buffer_map = {}
+        for (ref, buffer) in buffers:
+            buffer_map[ref['id']] = buffer
+        jsdoc.apply_json_patch(JSON.parse(json_patch), pyodide.ffi.to_js(buffer_map), setter_id='js')
+
+    pydoc.on_change(pysync)
+
+async def show(object, target):
+    pydoc, model_json = doc_json(object, target)
+    views = await Bokeh.embed.embed_item(JSON.parse(model_json))
+    jsdoc = views[0].model.document
+    _link_docs(pydoc, jsdoc)
+
+asyncio.ensure_future(show(sliders, 'sliders_learningpyscript'))
+asyncio.ensure_future(show(plots, 'plots_learningpyscript'))
+    
+</code></pre>
+</div>
+
+<br>
+<p>In the first half of the python script, I first set up the sliders and plot with defined initial values. Then, I define a callback that will update my plot when I interact with either of my sliders. Lastly, I define the layouts of my sliders and plots (which I keep separate, because they will each be fed into their own respective div in the second half of the second half of the python script). One detail here that tripped me up for a while is that in order for a Bokeh widget to occupy 100% of the width of its parent div, its sizing_mode needs to be set to "scale-width" or "stretch-width". With these set, the widget size can easily be managed by controlling the div using css formatting, as described above.</p>
+<br>
+<p>The second half of the python script renders the widgets in the html page. Of note are the last two lines. These lines reference the div ids that were set in the html code. This is where we define that the slider widgets populate the slider div, and the plot widgets populate the plots div.</p>
+<br>
+<p>The source code for this website can be found on my <a href="https://github.com/MeganCowie/Website" target="_blank">Github</a>. The code above is in the following files: header_html, style.css, content_learningpyscript.html, and script_learningpyscript.py.</p>

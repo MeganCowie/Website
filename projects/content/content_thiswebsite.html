@@ -1,1 +1,71 @@
-<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor <a href="https://www.example.com">Visit Example Website</a> incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+<p>I wonder what the world would be if the internet had remained a place where people predominantly built their own websites themselves. In such a world, each person's corner of the internet would be their simple ("ugly") website, rather than a staked-out presence in corporate ready-made megastructures like Facebook and Instagram. Would the content of the internet be different, in such a world? What would people share about themselves, if they didn't have a template?</p>
+<br>
+<p>I wonder if this world could actually be in our future. It seems to me that our society increasingly sees value in teaching children how to code. Maybe we are getting closer to widespread basic coding fluency, and we'll soon see more "do-it-myself" sticklers who aren't intimidated by the task of building a website from scratch. I hope so, not because I necessarily expect a "bottom-up" internet to be better, but moreso out of curiosity. I would like to see what people would say about themselves in a more free-form space. I would like to see another beautiful, ugly internet.</p>
+<br>
+<div class="divider">
+    <span>&bull;&bull;&bull;</span>
+</div>
+<br>
+<p>I am definitely a "do-it-myself" stickler, so when I thought about making a personal website, I knew I wanted to make it myself "from scratch". That's what I've done here, though I was inspired by the design of <a href="https://docs.nanoacademic.com/qtcad/" target="_blank">this website</a>, among others. The source code for my website can be found on my <a href="https://github.com/MeganCowie/Website" target="_blank">Github</a>.</p>
+<br>
+<p>I want to keep this website simple. For this reason, I'm keeping it to pure html and css, with no JavaScript. I'm not quite sure why I have this inclination. I've only done a little bit of JavaScript coding, but something about it is unappealing to me. Of course, my 'pure html and css' restriction doesn't include pages where I've made <a href=learningpyscript.shtml target="_blank">PyScript</a>-powered widgets (which use Python and JavaScript on the back-end). But the website itself - the layout, the buttons, etc. - uses no JavaScript.</p>
+<br> 
+<p>Also along the 'keep it simple' vein, I originally wanted the website to be completely static. However, organizing the static site quickly became beastly. I was copy/pasting things (e.g. my menu pane) everywhere, which was annoying, repetitive, and prone to typos. So, I bit the bullet and decided to use SSI. Now, instead of copy/pasting my html layout every time I make a new page, I have a template page which I programmatically populate. The template is structured like this:</p>
+<br>
+
+<p><div class="code-box">
+<pre><code class="code">&lt;!--- shtml ---&gt;
+
+&lt;html>
+    &lt;!--#include virtual="header.html" --&gt;
+    &lt;body&gt;
+        &lt;!--#include virtual="menu.html" --&gt;
+        &lt;section class="rightpane-wrapper"&gt;
+
+            &lt;div class="rightpane-head"&gt;
+                &lt;p&gt;
+                &lt;a style="color:currentColor; font-weight:300" href="&lt;!--#echo var="categoryLink"--&gt;"&gt;&lt;!--#echo var="categoryName"--&gt;&lt;/a&gt;
+                &lt;!--#echo var="categorySpacer"--&gt;
+                &lt;span class="rightpane-head-title"&gt;&lt;!--#echo var="pageTitle" --&gt;&lt;/span&gt;
+                &lt;/p&gt;
+                &lt;/div&gt;
+
+            &lt;div class="rightpane-body"&gt;
+                &lt;hr&gt;&lt;br&gt;&lt;h1&gt;&lt;!--#echo var="pageTitle"--&gt;&lt;/h1&gt;&lt;br&gt;
+                &lt;hr&gt;&lt;br&gt;&lt;span&gt;Last update: &lt;!--#echo var="lastUpdate"--&gt;&lt;br&gt;&lt;/span&gt;&lt;br&gt;
+                &lt;!--#include virtual="$content"--&gt;
+                &lt;br&gt;&lt;hr&gt;&lt;br&gt;&lt;p&gt; &copy; 2021-2024 &nbsp Megan Cowie &lt;br&gt;&lt;/p&gt;
+            &lt;/div&gt;
+
+        &lt;/section&gt;
+    &lt;/body&gt;
+&lt;/html&gt;
+
+</code></pre>
+</div></p>
+
+<br>
+<p>and the variables that go into this template are set in a separate (page-specific) shtml file:</p>
+<br>
+
+<div class="code-box">
+<pre><code class="code">&lt;!--- shtml ---&gt;
+
+&lt;!--#set var="categoryName" value="Projects" --&gt;
+&lt;!--#set var="categoryLink" value="/projects/projects.shtml" --&gt;
+&lt;!--#set var="categoryspacer" value=" /" --&gt;
+
+&lt;!--#set var="pageTitle" value="Building this website" --&gt;
+&lt;!--#set var="content" value="projects/content/content_thiswebsite.html"--&gt;
+
+&lt;!--#set var="lastUpdate" value="April 28, 2024" --&gt;
+
+&lt;!--#include virtual="../template_page.shtml" --&gt;
+
+</code></pre>
+</div>
+
+<br> 
+<p>The content of the webpage is written in its own html file. Including SSI meant that I had to set up a local server for testing. I did this with Apache, which was thankfully easy enough to do by following online tutorials.</p>
+<br>
+<p>And that's it! (so far.) I'm surprised by how much I enjoy coding in html and css. It's fun to have so much easy freedom over formatting - it really feels like an avenue to be creative.</p>
