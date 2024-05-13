@@ -377,27 +377,38 @@ li a{
   padding: 20px;
 }
 
-.bokeh-elements{
+.bokeh-elements-leftright{
   display: flex;
   margin: 0px;
   width: 100%
 }
-.bokeh-sliders {
+.bokeh-sliders-left {
   text-align: left;
   width: 30%;
   padding-right: 20px;
   padding-bottom: 0px;
 }
-.bokeh-plots {
+.bokeh-plots-right {
   width: 70%;
+}
+
+.bokeh-elements-full{
+  display: block;
+  margin: 0px;
+  width: 100%
+}
+.bokeh-full {
+  display: flex;
+  width: 100%;
+}
+.bokeh-full-3col {
+  text-align: left;
+  width: calc(100% / 3);
+  padding: 10px;
 }
 
 @media (max-width: 1200px) {
   .code-box {
-    margin: 0px;
-    width: 100%;
-  }
-  .bokeh-elements {
     margin: 0px;
     width: 100%;
   }
@@ -410,18 +421,29 @@ li a{
 }
 
 @media (max-width: 900px) {
-  .bokeh-elements{
+  .bokeh-elements-leftright{
     display: block;
     margin: 0px;
   }
-  .bokeh-sliders {
+  .bokeh-plots-right {
+    width: 100%;
+  }
+  .bokeh-sliders-left {
     width: 100%;
     padding-right: 0px;
     padding-bottom: 20px;
   }
-  .bokeh-plots {
+
+  .bokeh-full {
+    display: block;
     width: 100%;
+    padding-bottom: 20px;
   }
+  .bokeh-full-3col {
+    width: 100%;
+    padding: 0px;
+  }
+
 }
 
 

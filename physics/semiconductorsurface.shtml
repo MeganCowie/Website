@@ -1,0 +1,10 @@
+<!--#set var="categoryName" value="Physics" -->
+<!--#set var="categoryLink" value="/physics/semiconductorsurface.shtml" -->
+<!--#set var="categoryspacer" value=" /" -->
+
+<!--#set var="pageTitle" value="The semiconductor surface: MIS capacitor" -->
+<!--#set var="content" value="physics/content/content_semiconductorsurface.html"-->
+
+<!--#set var="lastUpdate" value="May 11, 2024" -->
+
+<!--#include virtual="../template_page.shtml" -->

@@ -83,12 +83,6 @@ def Func_NeNh(E, fc, fv, gc, gv, Ec, Ev): # /(J*m**3)
     Ne[E<Ec]=0
     Nh=fv*gv
     Nh[E>Ev]=0
-
-    print([max(Ne),max(Nh)])
-    #print([Ec,Ev])
-    #print([max(fc),max(fv)])
-    #print([max(gc),max(gv)])
-
     return Ne, Nh
 
 # effective density of conduction and valence band states
@@ -165,10 +159,6 @@ def calculator(E,f,Nd,Na,Eg,mn,mp,T):
     # Unit conversions to SI
     E = E*e #J
     f = f
-
-    #Nd_units = (10**slider_Nd)/(1e15)
-    #Na_units = (10**slider_Na)/(1e15)
-
     Nd = round(10**Nd)*(1e6) #m-3
     Na = round(10**Na)*(1e6) #m-3
     Eg = Eg*e #J
@@ -195,8 +185,8 @@ def calculator(E,f,Nd,Na,Eg,mn,mp,T):
     fv = fv
     gc = gc*e/(1000**3) #/eV cm^3
     gv = gv*e/(1000**3) #/eV cm^3
-    #Ne = Ne*e/(1000**3) #/cm^3
-    #Nh = Nh*e/(1000**3) #/cm^3
+    Ne = Ne*e/(1000**3) #/cm^3
+    Nh = Nh*e/(1000**3) #/cm^3
     return E,f,Ec,Ev,Ei,Ef,fc,fv,gc,gv,Ne,Nh
 
 # Initial calculated values
