@@ -10,7 +10,7 @@ from js import Bokeh, console, JSON
 from bokeh import __version__
 from bokeh.embed.util import OutputDocumentFor, standalone_docs_json_and_render_items
 from bokeh.plotting import figure
-from bokeh.models import Slider, Range1d, Spacer, Div, PrintfTickFormatter
+from bokeh.models import Slider, Div, CustomJS
 from bokeh.layouts import Column, Row, gridplot
 from bokeh.protocol.messages.patch_doc import process_document_events
 
@@ -24,17 +24,17 @@ e = sp.e #C
 ep_o = sp.value('vacuum electric permittivity') #C/(V*m)
 
 # Initial slider values
-slider_Vg_initialvalue = 5
-slider_zins_initialvalue = 10
-slider_Nd_initialvalue = 16
+slider_Vg_initialvalue = 0
+slider_zins_initialvalue = 12
+slider_Nd_initialvalue = 17.5
 slider_Na_initialvalue = 0
 slider_Eg_initialvalue = 0.8
-slider_ep_initialvalue = 0.8
-slider_EA_initialvalue = 0.8
-slider_WF_initialvalue = 0.8
-slider_mn_initialvalue = 0.5
-slider_mp_initialvalue = 1.5
-slider_T_initialvalue = 500
+slider_ep_initialvalue = 11.7
+slider_EA_initialvalue = 4.05
+slider_WF_initialvalue = 4.75
+slider_mn_initialvalue = 1
+slider_mp_initialvalue = 1
+slider_T_initialvalue = 300
 
 
 # Sliders
@@ -42,22 +42,22 @@ slider_Vg = Slider(start=-10, end=10, value=slider_Vg_initialvalue, step=0.1, ti
 slider_zins = Slider(start=0.1, end=20, value=slider_zins_initialvalue, step=0.1, title="zins", height=50, sizing_mode="scale_width")
 slider_Nd = Slider(start=14, end=20, value=slider_Nd_initialvalue, step=0.1, title="log(Donor conc. (#/cm^3))", height=50, sizing_mode="scale_width")
 slider_Na = Slider(start= 14, end=20, value=slider_Na_initialvalue, step=0.1, title="log(Acceptor conc. (#/cm^3))", height=50, sizing_mode="scale_width")
-slider_Eg = Slider(start=0.5, end=1.5, value=slider_Eg_initialvalue, step=0.1, title="Band gap (eV)", height=50, sizing_mode="scale_width")
-slider_ep = Slider(start=0.1, end=2, value=slider_ep_initialvalue, step=0.1, title="Rel. permittivity", height=50, sizing_mode="scale_width")
+slider_Eg = Slider(start=0.5, end=2, value=slider_Eg_initialvalue, step=0.1, title="Band gap (eV)", height=50, sizing_mode="scale_width")
+slider_ep = Slider(start=1, end=20, value=slider_ep_initialvalue, step=0.1, title="Rel. permittivity", height=50, sizing_mode="scale_width")
 slider_EA = Slider(start=1, end=5, value=slider_EA_initialvalue, step=0.1, title="Electron affinity (eV)", height=50, sizing_mode="scale_width")
 slider_WF = Slider(start=1, end=5, value=slider_WF_initialvalue, step=0.1, title="Metal work function (eV)", height=50, sizing_mode="scale_width")
 slider_mn = Slider(start=0.1, end=2, value=slider_mn_initialvalue, step=0.1, title="Elec. eff. mass", height=50, sizing_mode="scale_width")
 slider_mp = Slider(start=0.1, end=2, value=slider_mp_initialvalue, step=0.1, title="Hole eff. mass", height=50, sizing_mode="scale_width")
-slider_T = Slider(start=100, end=1000, value=slider_T_initialvalue, step=10, title="Temperature (K)", height=50, sizing_mode="scale_width")
+slider_T = Slider(start=100, end=500, value=slider_T_initialvalue, step=10, title="Temperature (K)", height=50, sizing_mode="scale_width")
 
 
 # Variables
 def Var_Vg_Vgarray():
-    Vgarray = np.arange(-10,10,0.1)
+    Vgarray = np.arange(-10,10,0.4)
     return Vgarray
 
 def Var_zins_zinsarray():
-    zinsarray = np.arange(0.1,20,0.1)
+    zinsarray = np.arange(0.1,20,0.4)
     return zinsarray
 
 # Electron and hole Fermi-dirac distributions
@@ -251,36 +251,36 @@ def Func_F(Qs,CPD,Vg,zins):
 def Func_regime(Na,Nd,Vs,Ei,Ef,Ec,Ev):
     if Na <=1e7: #n-type
         if Vs > 0:
-            regime = 1 #accumulation
+            regime = "accumulation"
         elif Vs == 0:
-            regime = 2 #flatband
+            regime = "flatband"
         elif Ef > (Ei-Vs):
-            regime = 3 #depletion
+            regime = "depletion"
         elif Ef == (Ei-Vs):
-            regime = 4 #threshold
+            regime = "threshold"
         elif Ef < (Ev-Vs):
-            regime = 6 #strong inversion
+            regime = "strong inversion"
         else:
-            regime = 5 #weak inversion
+            regime = "weak inversion"
     elif Nd <=1e7: #p-type
         if Vs < 0:
-            regime = 1 #accumulation
+            regime = "accumulation"
         elif Vs == 0:
-            regime = 2 #flatband
+            regime = "flatband"
         elif Ef < (Ei-Vs):
-            regime = 3 #depletion
+            regime = "depletion"
         elif Ef == (Ei-Vs):
-            regime = 4 #threshold
+            regime = "threshold"
         elif Ef > (Ec-Vs):
-            regime = 6 #strong inversion
+            regime = "strong inversion"
         else:
-            regime = 5 #weak inversion
+            regime = "weak inversion"
     return regime
 
 # Calculate band bending
 def BandBending(T,ep,nb,pb,Vs):
 
-    numdatapoints = 101
+    numdatapoints = 21
 
     def z_sem_eqn(V_variable):
         f_soln= Func_f(T,V_variable,nb,pb) #dimensionless
@@ -471,7 +471,7 @@ def calculator_Vgarrays(Vg_Vgarray,Vg,zins,Nd,Na,Eg,ep,EA,WF,mn,mp,T):
 def calculator_zinsarrays(zins_zinsarray,Vg,zins,Nd,Na,Eg,ep,EA,WF,mn,mp,T):
     Vs_zinsarray = []
     F_zinsarray = []
-    for Vg in zins_zinsarray:
+    for zins in zins_zinsarray:
         Vs,F = calculator_arrayvalues(Vg,zins,Nd,Na,Eg,ep,EA,WF,mn,mp,T)
         Vs_zinsarray.append(Vs)
         F_zinsarray.append(F)
@@ -483,7 +483,7 @@ Vg_initialvalue,zins_initialvalue,Vs_initialvalue,F_initialvalue,Ef_initialvalue
 
 Vg_Vgarray_initialvalue,Vs_Vgarray_initialvalue,F_Vgarray_initialvalue = calculator_Vgarrays(Var_Vg_Vgarray(),slider_Vg_initialvalue,slider_zins_initialvalue,slider_Nd_initialvalue,slider_Na_initialvalue,slider_Eg_initialvalue,slider_ep_initialvalue,slider_EA_initialvalue,slider_WF_initialvalue,slider_mn_initialvalue,slider_mp_initialvalue,slider_T_initialvalue)
 
-zins_zinsarray_initialvalue,Vs_zinsarray_initialvalue,F_zinsarray_initialvalue = calculator_zinsarrays(Var_zins_zinsarray(),slider_Vg_initialvalue,slider_zins_initialvalue,slider_Nd_initialvalue,slider_Na_initialvalue,slider_Eg_initialvalue,slider_ep_initialvalue,slider_EA_initialvalue,slider_WF_initialvalue,slider_mn_initialvalue,slider_mp_initialvalue,slider_T_initialvalue)
+zins_zinsarray_initialvalue,Vs_zinsarray_initialvalue,F_zinsarray_initialvalue = calculator_zinsarrays(Var_zins_zinsarray(),slider_Vg_initialvalue,zins_initialvalue,slider_Nd_initialvalue,slider_Na_initialvalue,slider_Eg_initialvalue,slider_ep_initialvalue,slider_EA_initialvalue,slider_WF_initialvalue,slider_mn_initialvalue,slider_mp_initialvalue,slider_T_initialvalue)
 
 
 # Axes limits & ticks
@@ -555,6 +555,7 @@ plot1d.yaxis.axis_label_text_font_style = "normal"
 
 plot2a = figure(height=300, sizing_mode="stretch_width", toolbar_location=None)
 plot2a.line(Vg_Vgarray_initialvalue, Vs_Vgarray_initialvalue, line_width=2, color=color_line)
+plot2a.circle(Vg_initialvalue, Vs_initialvalue, color=color_line, size=8)
 #plot2a.x_range = Range1d(xlim_2[0],xlim_2[1])
 #plot2a.y_range = Range1d(ylim[0],ylim[1])
 plot2a.xaxis.axis_label = "Vg (eV)"
@@ -564,7 +565,9 @@ plot2a.yaxis.axis_label_text_font_style = "normal"
 #plot2a.xaxis.ticker = xlim_2
 
 plot2b = figure(height=300, sizing_mode="stretch_width", toolbar_location=None)
-plot2b.line(Vg_Vgarray_initialvalue, F_Vgarray_initialvalue, line_width=2, color=color_line)
+plot2b.line(Vg_Vgarray_initialvalue, F_Vgarray_initialvalue, line_width=2, 
+color=color_line)
+plot2b.circle(Vg_initialvalue, F_initialvalue, color=color_line, size=8)
 #plot2b.x_range = Range1d(xlim_2[0],xlim_2[1])
 #plot2b.y_range = Range1d(ylim[0],ylim[1])
 plot2b.xaxis.axis_label = "Vg (eV)"
@@ -575,6 +578,7 @@ plot2b.yaxis.axis_label_text_font_style = "normal"
 
 plot3a = figure(height=300, sizing_mode="stretch_width", toolbar_location=None)
 plot3a.line(zins_zinsarray_initialvalue, Vs_zinsarray_initialvalue, line_width=2, color=color_line)
+plot3a.circle(zins_initialvalue, Vs_initialvalue, color=color_line, size=8)
 #plot3a.x_range = Range1d(xlim_3_initialvalue[0],xlim_3_initialvalue[1])
 #plot3a.y_range = Range1d(ylim[0],ylim[1])
 plot3a.xaxis.axis_label = "zins (nm)"
@@ -585,6 +589,7 @@ plot3a.yaxis.axis_label_text_font_style = "normal"
 
 plot3b = figure(height=300, sizing_mode="stretch_width", toolbar_location=None)
 plot3b.line(zins_zinsarray_initialvalue, F_zinsarray_initialvalue, line_width=2, color=color_line)
+plot3b.circle(zins_initialvalue, F_initialvalue, color=color_line, size=8)
 #plot3b.x_range = Range1d(xlim_3_initialvalue[0],xlim_3_initialvalue[1])
 #plot3b.y_range = Range1d(ylim[0],ylim[1])
 plot3b.xaxis.axis_label = "zins (nm)"
@@ -594,10 +599,27 @@ plot3b.yaxis.axis_label_text_font_style = "normal"
 #plot3b.xaxis.ticker = xlim_3
 
 
+# Define a JavaScript callback for slider1
+switchtype_np = CustomJS(args=dict(slider1=slider_Nd, slider2=slider_Na), code="""
+    slider1.value = 0;
+""")
+switchtype_pn = CustomJS(args=dict(slider1=slider_Nd, slider2=slider_Na), code="""
+    slider2.value = 0;
+""")
+
+# Attach the callback to slider1
+slider_Nd.js_on_change('value', switchtype_pn)
+slider_Na.js_on_change('value', switchtype_np)
+
+# Indicate the regime
+regimetext = Div(text=regime_initialvalue, style={'height': '50px', 'line-height': '50px', 'text-align': 'center', 'font-weight': 'bold', 'position': 'relative', 'display': 'flex', 'justify-content': 'center', 'align-items': 'center'})
+
+
+
 # Layout
 slidercol_1 = Column(slider_Vg,slider_zins,slider_T,slider_WF, sizing_mode="scale_width")
-slidercol_2 = Column(slider_Eg,slider_Nd,slider_Na,sizing_mode="scale_width")
-slidercol_3 = Column(slider_ep,slider_EA,slider_mn,slider_mp, sizing_mode="scale_width")
+slidercol_2 = Column(slider_ep,slider_EA,slider_mn,slider_mp, sizing_mode="scale_width")
+slidercol_3 = Column(slider_Eg,slider_Nd,slider_Na,regimetext, sizing_mode="scale_width")
 
 plotcol_1 = Column(plot1a,plot1b,plot1c,plot1d, sizing_mode="scale_width")
 plotcol_2 = Column(plot2a,plot2b, sizing_mode="scale_width")
@@ -614,6 +636,9 @@ def update_data(attrname, old, new):
 
     zins_zinsarray,Vs_zinsarray,F_zinsarray = calculator_zinsarrays(Var_zins_zinsarray(),slider_Vg.value,slider_zins.value,slider_Nd.value,slider_Na.value,slider_Eg.value,slider_ep.value,slider_EA.value,slider_WF.value,slider_mn.value,slider_mp.value,slider_T.value)
 
+    # Update the regime text
+    regimetext.text = regime
+    
     plot1a.renderers.clear()
     plot1a.line(zmet, Vmet, color=color_met, line_width=2)
     plot1a.line(zgap, Vgap, color=color_gap, line_width=2)
@@ -633,15 +658,19 @@ def update_data(attrname, old, new):
 
     plot2a.renderers.clear()
     plot2a.line(Vg_Vgarray, Vs_Vgarray, color=color_line, line_width=2)
+    plot2a.circle(Vg, Vs, color=color_line, size=8)
 
     plot2b.renderers.clear()
     plot2b.line(Vg_Vgarray, F_Vgarray, color=color_line, line_width=2)
+    plot2b.circle(Vg, F, color=color_line, size=8)
 
     plot3a.renderers.clear()
     plot3a.line(zins_zinsarray, Vs_zinsarray, color=color_line, line_width=2)
+    plot3a.circle(zins, Vs, color=color_line, size=8)
 
     plot3b.renderers.clear()
     plot3b.line(zins_zinsarray, F_zinsarray, color=color_line, line_width=2)
+    plot3b.circle(zins, F, color=color_line, size=8)
 
 slider_Vg.on_change('value', update_data)
 slider_zins.on_change('value', update_data)
