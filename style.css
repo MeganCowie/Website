@@ -442,6 +442,7 @@ li a{
   .bokeh-full-3col {
     width: 100%;
     padding: 0px;
+    padding-bottom: 20px;
   }
 
 }
