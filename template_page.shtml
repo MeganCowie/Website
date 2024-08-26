@@ -8,7 +8,7 @@
             <div class="rightpane-head">
                 <p>
                 <a style="color:currentColor" href="../index.shtml"><svg style="fill:currentColor" xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="15" height="15" viewBox="0,0,300,150"><g fill-rule="nonzero" stroke="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="10" stroke-dasharray="" stroke-dashoffset="0" font-family="none" font-weight="none" font-size="none" text-anchor="none" style="mix-blend-mode: normal"><g transform="scale(10.66667,10.66667)"><path d="M12,2.09961l-11,9.90039h3v9h7v-6h2v6h7v-9h3zM12,4.79102l6,5.40039v0.80859v8h-3v-6h-6v6h-3v-8.80859z"></path></g></g></svg></object></a> /
-                <a style="color:currentColor; font-weight:300" href="<!--#echo var="categoryLink"-->"><!--#echo var="categoryName"--></a>
+                <span class="rightpane-head-title"><!--#echo var="categoryName" --></span>
                 <!--#echo var="categorySpacer"-->
                 <span class="rightpane-head-title"><!--#echo var="pageTitle" --></span>
                 </p>

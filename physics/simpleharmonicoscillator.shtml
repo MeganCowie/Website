@@ -1,5 +1,4 @@
 <!--#set var="categoryName" value="Physics" -->
-<!--#set var="categoryLink" value="/physics/physics.shtml" -->
 <!--#set var="categoryspacer" value=" /" -->
 
 <!--#set var="pageTitle" value="The simple harmonic oscillator" -->
