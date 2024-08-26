@@ -366,6 +366,12 @@ li a{
   display: none;
 }
 
+.poem-box {
+  display:flex;
+  flex-direction: column;
+  width: fit-content;
+  margin: auto;
+}
 .code-box {
   display: flex;
   border: 1px solid #cecece;
@@ -376,6 +382,20 @@ li a{
   overflow-x: auto;
   padding: 20px;
 }
+
+.left-right-box{
+  display: flex;
+  align-items: center; 
+}
+.left-box, .right-box {
+  flex: 1;
+  padding: 10px;
+}
+.right-box img {
+  width: 100%;
+  height: auto;
+}
+
 
 .bokeh-elements-leftright{
   display: flex;
@@ -421,6 +441,9 @@ li a{
 }
 
 @media (max-width: 900px) {
+  .left-right-box{
+    display: block;
+  }
   .bokeh-elements-leftright{
     display: block;
     margin: 0px;

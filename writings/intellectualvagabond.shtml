@@ -1,0 +1,10 @@
+<!--#set var="categoryName" value="Writings" -->
+<!--#set var="categoryLink" value="/writings/writings.shtml" -->
+<!--#set var="categoryspacer" value=" /" -->
+
+<!--#set var="pageTitle" value="Intellectual vagabond" -->
+<!--#set var="content" value="writings/content/content_intellectualvagabond.html"-->
+
+<!--#set var="lastUpdate" value="August 25, 2024" -->
+
+<!--#include virtual="../template_page.shtml" -->

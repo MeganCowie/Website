@@ -1,9 +1,9 @@
-<!--#set var="categoryName" value="Philosophy" -->
-<!--#set var="categoryLink" value="/philosophy/philosophy.shtml" -->
+<!--#set var="categoryName" value="Writings" -->
+<!--#set var="categoryLink" value="/writings/writings.shtml" -->
 <!--#set var="categoryspacer" value=" /" -->
 
 <!--#set var="pageTitle" value="On actors and philosophers" -->
-<!--#set var="content" value="philosophy/content/content_onactorsandphilosophers.html"-->
+<!--#set var="content" value="writings/content/content_onactorsandphilosophers.html"-->
 
 <!--#set var="lastUpdate" value="April 9, 2024" -->
 

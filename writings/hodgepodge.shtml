@@ -2,8 +2,8 @@
 <!--#set var="categoryLink" value="" -->
 <!--#set var="categoryspacer" value="" -->
 
-<!--#set var="pageTitle" value="Philosophy" -->
-<!--#set var="content" value="philosophy/content/content_empty.html"-->
+<!--#set var="pageTitle" value="Writings" -->
+<!--#set var="content" value="writings/content/content_empty.html"-->
 
 <!--#set var="lastUpdate" value="April 9, 2024" -->
 
